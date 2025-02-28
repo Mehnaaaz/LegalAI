@@ -1,0 +1,8 @@
+Flask==2.3.3
+Flask-Cors==4.0.0
+python-dotenv==1.0.0
+sentence-transformers==2.2.2
+pdfplumber==0.10.2
+docx2txt==0.8
+numpy==1.26.0
+together==0.2.10

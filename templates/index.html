@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LegalMind - AI Legal Document Analysis</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #2a9d8f;
+      --secondary: #264653;
+      --accent: #e9c46a;
+      --background: #1a1a1a;
+      --text: #ffffff;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    body {
+      background: var(--background);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 3rem;
+      opacity: 0;
+      animation: fadeIn 1s ease-in forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .upload-section {
+      background: var(--secondary);
+      border-radius: 15px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      transition: transform 0.3s ease;
+      border: 2px dashed var(--primary);
+      position: relative;
+      overflow: hidden;
+    }
+    .upload-section:hover {
+      transform: translateY(-5px);
+    }
+    .upload-content {
+      text-align: center;
+      padding: 2rem;
+      cursor: pointer;
+    }
+    .upload-icon {
+      font-size: 3rem;
+      color: var(--primary);
+      margin-bottom: 1rem;
+      transition: transform 0.3s ease;
+    }
+    #loading {
+      margin-top: 1rem;
+      font-weight: bold;
+      color: var(--accent);
+    }
+    .chat-box {
+      background: var(--secondary);
+      border-radius: 15px;
+      padding: 1.5rem;
+      flex-grow: 1; /* Expand to fill remaining space */
+      display: flex;
+      flex-direction: column;
+    }
+    .chat-messages {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      background: #1d1d1d;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+    }
+    .message {
+      background: var(--background);
+      padding: 0.8rem;
+      margin: 0.5rem 0;
+      border-radius: 8px;
+      max-width: 80%;
+      animation: slideIn 0.3s ease;
+    }
+    .user-message {
+      background: var(--primary);
+      margin-left: auto;
+    }
+    .thinking {
+      font-style: italic;
+      color: #888;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    .input-group {
+      display: flex;
+      gap: 1rem;
+      margin-top: auto;
+    }
+    input[type="text"] {
+      flex-grow: 1;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 8px;
+      background: #1d1d1d;
+      color: var(--text);
+    }
+    button {
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      background: var(--primary);
+      color: white;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    button:hover {
+      transform: scale(1.05);
+    }
+    .document-preview {
+      width: 80px;
+      height: 100px;
+      margin: 0 auto 1rem;
+      display: none;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
+    }
+    .document-preview svg {
+      width: 100%;
+      height: 100%;
+      fill: var(--primary);
+    }
+    .uploaded .document-preview {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .uploaded .upload-icon {
+      display: none;
+    }
+    .uploaded h3 {
+      color: var(--accent);
+    }
+    .uploaded p:not(.file-name) {
+      display: none;
+    }
+    .file-name {
+      color: var(--primary);
+      margin-top: 0.5rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>🦉 LegalMind AI</h1>
+      <p>Advanced Legal Document Analysis & Q/A System</p>
+    </header>
+
+    <section class="upload-section">
+      <input type="file" id="fileInput" style="display: none;" accept=".pdf,.docx,.txt" aria-label="Upload legal document">
+      <div class="upload-content" id="dropZone" onclick="document.getElementById('fileInput').click();" aria-label="Drag and drop your legal document here">
+        <div class="document-preview">
+          <svg viewBox="0 0 384 512" aria-hidden="true">
+            <path d="M224 136V0H24C10.7 0 0 10.7 0 24v464c0 13.3 10.7 24 24 24h336c13.3 0 24-10.7 24-24V160H248c-13.2 0-24-10.8-24-24zm160-14.1v6.1H256V0h6.1c6.4 0 12.5 2.5 17 7l97.9 98c4.5 4.5 7 10.6 7 16.9z"/>
+          </svg>
+        </div>
+        <i class="fas fa-file-upload upload-icon" aria-hidden="true"></i>
+        <h3>Drag & Drop or Click to Upload Legal Documents</h3>
+        <p>Supported formats: PDF, DOCX, TXT</p>
+        <p class="file-name" id="fileName"></p>
+        <div id="loading" style="display: none;">Processing Document...</div>
+      </div>
+    </section>
+
+    <div class="chat-box">
+      <div class="chat-messages" id="chatMessages">
+        <div class="message bot-message">Welcome! Upload a legal document to begin analysis with our AI-powered system.</div>
+      </div>
+      <div class="input-group">
+        <input type="text" id="userInput" placeholder="Ask a legal question..." aria-label="Type your legal question">
+        <button onclick="sendQuestion()" aria-label="Send question"><i class="fas fa-paper-plane"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // File Upload Handling
+    const dropZone = document.getElementById('dropZone');
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.style.borderColor = 'var(--primary)';
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.style.borderColor = 'var(--secondary)';
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.style.borderColor = 'var(--secondary)';
+      const files = e.dataTransfer.files;
+      handleFiles(files);
+    });
+
+    document.getElementById('fileInput').addEventListener('change', (e) => {
+      const files = e.target.files;
+      handleFiles(files);
+      e.target.value = ''; // Reset file input
+    });
+
+    function handleFiles(files) {
+      if (files.length === 0) return;
+      const file = files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Show file name and document preview
+      document.getElementById('fileName').textContent = file.name;
+      document.getElementById('dropZone').classList.add('uploaded');
+      document.getElementById('fileName').style.display = 'block';
+      document.getElementById('loading').style.display = 'block';
+
+      fetch('http://localhost:5000/upload', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => {
+        document.getElementById('loading').style.display = 'none';
+        if (!response.ok) throw new Error('Upload failed');
+        return response.json();
+      })
+      .then(data => {
+        if (data.error) {
+          addMessage(data.error, 'bot');
+          document.getElementById('dropZone').classList.remove('uploaded');
+          document.getElementById('fileName').style.display = 'none';
+          return;
+        }
+        addMessage(`Document processed successfully. Split into ${data.chunk_count} chunks for analysis. You can now ask questions.`, 'bot');
+      })
+      .catch(error => {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('dropZone').classList.remove('uploaded');
+        document.getElementById('fileName').style.display = 'none';
+        console.error('Error uploading file:', error);
+        addMessage('Failed to process document. Please try again.', 'bot');
+      });
+    }
+
+    // Chat Functionality
+    function sendQuestion() {
+      const input = document.getElementById('userInput');
+      const message = input.value.trim();
+      if (message) {
+        addMessage(message, 'user');
+        const thinkingMessage = addMessage('Analyzing document and generating response...', 'bot', 'thinking');
+        fetch('http://localhost:5000/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: message })
+        })
+        .then(response => {
+          if (!response.ok) throw new Error('Question failed');
+          return response.json();
+        })
+        .then(data => {
+          thinkingMessage.remove();
+          if (data.error) {
+            addMessage(data.error, 'bot');
+            return;
+          }
+          // Display only the answer in the chat box
+          addMessage(data.answer, 'bot');
+        })
+        .catch(error => {
+          thinkingMessage.remove();
+          console.error('Error asking question:', error);
+          addMessage('Sorry, I couldn’t process that question. Please try again.', 'bot');
+        });
+        input.value = '';
+      }
+    }
+
+    function addMessage(text, sender, extraClass = '') {
+      const chatMessages = document.getElementById('chatMessages');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${sender}-message ${extraClass}`;
+      messageDiv.textContent = text;
+      chatMessages.appendChild(messageDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      return messageDiv;
+    }
+
+    // Enter Key Handling
+    document.getElementById('userInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        sendQuestion();
+      }
+    });
+  </script>
+</body>
+</html>
